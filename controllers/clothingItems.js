@@ -43,28 +43,6 @@ const createItem = (req, res) => {
     });
 };
 
-const getItem = (req, res) => {
-  const { id } = req.params;
-
-  if (!isValidObjectId(id)) {
-    return res.status(BAD_REQUEST).send({ message: "Invalid ID format." });
-  }
-
-  return Item.findById(id)
-    .then((item) => {
-      if (!item) {
-        return res.status(NOT_FOUND).send({ message: "Item not found." });
-      }
-      return res.status(200).send(item);
-    })
-    .catch((err) => {
-      console.error(`Error fetching item by ID: ${id}`, err);
-      return res
-        .status(INTERNAL_SERVER_ERROR)
-        .send({ message: "An error occurred on the server." });
-    });
-};
-
 const deleteItem = (req, res) => {
   const { itemId } = req.params;
 
@@ -148,7 +126,6 @@ const dislikeItem = (req, res) => {
 module.exports = {
   getItems,
   createItem,
-  getItem,
   deleteItem,
   likeItem,
   dislikeItem,
