@@ -26,10 +26,7 @@ The server interacts with a MongoDB database to store user information and cloth
 - **MongoDB**: NoSQL database for storing user and clothing item data.
 - **Mongoose**: ODM (Object Data Modeling) library for MongoDB.
 - **Nodemon**: Utility to automatically restart the server during development.
-- **JWT (JSON Web Tokens)**: For user authentication and authorization.
-- **bcrypt**: For hashing and securing passwords.
-- **dotenv**: To manage environment variables securely.
-- **ESLint**: Linting tool to maintain code quality and consistency.
+- **Postman**: API testing tool for verifying endpoints during development.
 
 ## Running the Project
 
@@ -45,5 +42,3 @@ Before committing your code, make sure to edit the `sprint.txt` file in the root
 ## Deployment
 
 The back end can be deployed on platforms such as Heroku, AWS, or any server that supports Node.js applications.
-
-
