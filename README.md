@@ -30,8 +30,6 @@ The server interacts with a MongoDB database to store user information and cloth
 - **bcrypt**: For hashing and securing passwords.
 - **dotenv**: To manage environment variables securely.
 - **ESLint**: Linting tool to maintain code quality and consistency.
-- **Validation**: Data validation using libraries like `celebrate` and `Joi`.
-- **Security**: Middleware like `helmet` to secure HTTP headers.
 
 ## Running the Project
 
