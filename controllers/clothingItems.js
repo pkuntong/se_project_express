@@ -4,6 +4,7 @@ const {
   BAD_REQUEST,
   NOT_FOUND,
   INTERNAL_SERVER_ERROR,
+  FORBIDDEN,
 } = require("../utils/errors");
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
@@ -123,10 +124,33 @@ const dislikeItem = (req, res) => {
     });
 };
 
+const getItem = (req, res) => {
+  const { id } = req.params;
+
+  if (!isValidObjectId(id)) {
+    return res.status(BAD_REQUEST).send({ message: "Invalid ID format." });
+  }
+
+  return Item.findById(id)
+    .then((item) => {
+      if (!item) {
+        return res.status(NOT_FOUND).send({ message: "Item not found." });
+      }
+      return res.send(item);
+    })
+    .catch((err) => {
+      console.error(`Error fetching item by ID: ${id}`, err);
+      return res
+        .status(INTERNAL_SERVER_ERROR)
+        .send({ message: "An error occurred on the server." });
+    });
+};
+
 module.exports = {
   getItems,
   createItem,
   deleteItem,
   likeItem,
   dislikeItem,
+  getItem,
 };
