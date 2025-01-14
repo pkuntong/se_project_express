@@ -11,7 +11,7 @@ const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
 const getItems = (req, res) => {
   Item.find({})
-    .then((items) => res.status(200).send(items))
+    .then((items) => res.send(items))
     .catch((err) => {
       console.error(err);
       return res
@@ -44,6 +44,28 @@ const createItem = (req, res) => {
     });
 };
 
+const getItem = (req, res) => {
+  const { id } = req.params;
+
+  if (!isValidObjectId(id)) {
+    return res.status(BAD_REQUEST).send({ message: "Invalid ID format." });
+  }
+
+  return Item.findById(id)
+    .then((item) => {
+      if (!item) {
+        return res.status(NOT_FOUND).send({ message: "Item not found." });
+      }
+      return res.send(item);
+    })
+    .catch((err) => {
+      console.error(`Error fetching item by ID: ${id}`, err);
+      return res
+        .status(INTERNAL_SERVER_ERROR)
+        .send({ message: "An error occurred on the server." });
+    });
+};
+
 const deleteItem = (req, res) => {
   const { itemId } = req.params;
 
@@ -51,21 +73,28 @@ const deleteItem = (req, res) => {
     return res.status(BAD_REQUEST).send({ message: "Invalid item ID." });
   }
 
-  return Item.findByIdAndDelete(itemId)
-    .orFail(() => {
-      const error = new Error("Item not found.");
-      error.statusCode = NOT_FOUND;
-      throw error;
+  return Item.findById(itemId)
+
+    .then((item) => {
+      if (!item) {
+        return res.status(NOT_FOUND).send({ message: "Item not found." });
+      }
+      if (item.owner.toString() !== req.user._id) {
+        return res
+          .status(FORBIDDEN)
+          .send({ message: "You do not have permission to delete this item." });
+      }
+
+      return Item.findByIdAndDelete(itemId).then(() =>
+        res.send({ message: "Item deleted successfully." })
+      );
     })
-    .then(() => res.status(200).send({ message: "Item deleted successfully." }))
     .catch((err) => {
       console.error(err);
       if (err.name === "CastError") {
         return res.status(BAD_REQUEST).send({ message: "Invalid item ID." });
       }
-      if (err.statusCode === NOT_FOUND) {
-        return res.status(NOT_FOUND).send({ message: "Item not found." });
-      }
+
       return res
         .status(INTERNAL_SERVER_ERROR)
         .send({ message: "An error occured on the server" });
@@ -88,7 +117,7 @@ const likeItem = (req, res) => {
       if (!item) {
         return res.status(NOT_FOUND).send({ message: "Item not found." });
       }
-      return res.status(200).send(item);
+      return res.send(item);
     })
     .catch((err) => {
       console.error(err);
@@ -114,7 +143,7 @@ const dislikeItem = (req, res) => {
       if (!item) {
         return res.status(NOT_FOUND).send({ message: "Item not found." });
       }
-      return res.status(200).send(item);
+      return res.send(item);
     })
     .catch((err) => {
       console.error(err);
@@ -124,33 +153,11 @@ const dislikeItem = (req, res) => {
     });
 };
 
-const getItem = (req, res) => {
-  const { id } = req.params;
-
-  if (!isValidObjectId(id)) {
-    return res.status(BAD_REQUEST).send({ message: "Invalid ID format." });
-  }
-
-  return Item.findById(id)
-    .then((item) => {
-      if (!item) {
-        return res.status(NOT_FOUND).send({ message: "Item not found." });
-      }
-      return res.send(item);
-    })
-    .catch((err) => {
-      console.error(`Error fetching item by ID: ${id}`, err);
-      return res
-        .status(INTERNAL_SERVER_ERROR)
-        .send({ message: "An error occurred on the server." });
-    });
-};
-
 module.exports = {
   getItems,
   createItem,
+  getItem,
   deleteItem,
   likeItem,
   dislikeItem,
-  getItem,
 };
