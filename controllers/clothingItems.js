@@ -1,26 +1,16 @@
 const ClothingItem = require("../models/clothingItem");
-const {
-  DEFAULT,
-  NOT_FOUND,
-  BAD_REQUEST,
-  FORBIDDEN_ERROR,
-} = require("../utils/errors");
+const BadRequestError = require("../utils/errors/BadRequestError");
+const ForbiddenError = require("../utils/errors/ForbiddenError");
+const NotFoundError = require("../utils/errors/NotFoundError");
 
-// Get all clothing items
-const getClothingItems = (req, res) => {
+const getClothingItems = (req, res, next) => {
   ClothingItem.find({})
     .populate("owner")
     .then((items) => res.send({ data: items }))
-    .catch((err) => {
-      console.error(err);
-      res
-        .status(DEFAULT)
-        .send({ message: "An error has occurred on the server" });
-    });
+    .catch(next);
 };
 
-// Create a new clothing item
-const createClothingItem = (req, res) => {
+const createClothingItem = (req, res, next) => {
   const { name, weather, imageUrl } = req.body;
 
   ClothingItem.create({ name, weather, imageUrl, owner: req.user._id })
@@ -31,32 +21,27 @@ const createClothingItem = (req, res) => {
     .catch((err) => {
       console.error(err);
       if (err.name === "ValidationError") {
-        res
-          .status(BAD_REQUEST)
-          .send({ message: "Invalid input, please try again" });
+        next(new BadRequestError("Invalid input, please try again"));
       } else {
-        res
-          .status(DEFAULT)
-          .send({ message: "An error has occurred on the server" });
+        next(err);
       }
     });
 };
 
-// Delete a clothing item
-const deleteClothingItem = (req, res) => {
+const deleteClothingItem = (req, res, next) => {
   const { itemId } = req.params;
 
   ClothingItem.findById(itemId)
     .orFail(() => {
       const error = new Error("Item ID not found");
-      error.statusCode = NOT_FOUND;
+      error.statusCode = 404;
       throw error;
     })
     .then((item) => {
       if (item.owner.toString() !== req.user._id) {
-        return res.status(FORBIDDEN_ERROR).send({
-          message: "You do not have permission to delete this item",
-        });
+        return next(
+          new ForbiddenError("You do not have permission to delete this item")
+        );
       }
       return ClothingItem.findByIdAndDelete(itemId).then(() => {
         res.send({ message: "Item successfully deleted" });
@@ -65,21 +50,16 @@ const deleteClothingItem = (req, res) => {
     .catch((err) => {
       console.error(err);
       if (err.message === "Item ID not found") {
-        return res.status(NOT_FOUND).send({ message: "Item not found" });
+        return next(new NotFoundError("Item not found"));
       }
       if (err.name === "CastError") {
-        return res
-          .status(BAD_REQUEST)
-          .send({ message: "Invalid input, please try again" });
+        return next(new BadRequestError("Invalid input, please try again"));
       }
-      return res
-        .status(DEFAULT)
-        .send({ message: "An error has occurred on the server" });
+      return next(err);
     });
 };
 
-// Like a clothing item
-const likeItem = (req, res) => {
+const likeItem = (req, res, next) => {
   ClothingItem.findByIdAndUpdate(
     req.params.itemId,
     {
@@ -89,7 +69,7 @@ const likeItem = (req, res) => {
   )
     .orFail(() => {
       const error = new Error("Clothing item not found");
-      error.statusCode = NOT_FOUND;
+      error.statusCode = 404;
       throw error;
     })
     .populate("owner")
@@ -97,21 +77,16 @@ const likeItem = (req, res) => {
     .catch((err) => {
       console.error(err);
       if (err.message === "Clothing item not found") {
-        res.status(NOT_FOUND).send({ message: "Clothing item not found" });
+        next(new NotFoundError("Clothing item not found"));
       } else if (err.name === "CastError") {
-        res
-          .status(BAD_REQUEST)
-          .send({ message: "Invalid input, please try again" });
+        next(new BadRequestError("Invalid input, please try again"));
       } else {
-        res
-          .status(DEFAULT)
-          .send({ message: "An error has occurred on the server" });
+        next(err);
       }
     });
 };
 
-// Dislike a clothing item
-const dislikeItem = (req, res) => {
+const dislikeItem = (req, res, next) => {
   ClothingItem.findByIdAndUpdate(
     req.params.itemId,
     {
@@ -121,7 +96,7 @@ const dislikeItem = (req, res) => {
   )
     .orFail(() => {
       const error = new Error("Clothing item not found");
-      error.statusCode = NOT_FOUND;
+      error.statusCode = 404;
       throw error;
     })
     .populate("owner")
@@ -129,15 +104,11 @@ const dislikeItem = (req, res) => {
     .catch((err) => {
       console.error(err);
       if (err.message === "Clothing item not found") {
-        res.status(NOT_FOUND).send({ message: "Clothing item not found" });
+        next(new NotFoundError("Clothing item not found"));
       } else if (err.name === "CastError") {
-        res
-          .status(BAD_REQUEST)
-          .send({ message: "Invalid input, please try again" });
+        next(new BadRequestError("Invalid input, please try again"));
       } else {
-        res
-          .status(DEFAULT)
-          .send({ message: "An error has occurred on the server" });
+        next(err);
       }
     });
 };
