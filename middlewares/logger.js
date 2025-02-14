@@ -12,31 +12,23 @@ const messageFormat = winston.format.combine(
   )
 );
 
-// The request logger, with two different "transports". One transport
-// logs to a file, the other logs to the console.
 const requestLogger = expressWinston.logger({
   transports: [
-    new winston.transports.Console({
-      // For console logs we use our relatively concise messageFormat
-      format: messageFormat,
-    }),
-    new winston.transports.File({
-      filename: "request.log",
-      // For file logs we use the more verbose json format
-      format: winston.format.json(),
-    }),
+    new winston.transports.File({ filename: 'request.log' }),
   ],
+  format: winston.format.json(),
 });
 
 // error logger
 const errorLogger = expressWinston.errorLogger({
   transports: [
-    new winston.transports.Console({
-      format: messageFormat,
-    }),
-    new winston.transports.File({
-      filename: "error.log",
-      format: winston.format.json(),
-    }),
+    new winston.transports.File({ filename: 'error.log' }),
   ],
+  format: winston.format.json(),
 });
+
+module.exports = {
+  requestLogger,
+  errorLogger,
+};
+
