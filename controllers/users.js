@@ -1,26 +1,21 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-
 const User = require("../models/user");
-
-const { JWT_SECRET } = require("../utils/config");
-const {
-  DEFAULT,
-  NOT_FOUND,
-  BAD_REQUEST,
-  UNAUTHORISED,
-  CONFLICT_ERROR,
-} = require("../utils/errors");
+const JWT_SECRET = require("../utils/config");
+const NotFoundError = require("../utils/Errors/NotFoundError");
+const BadRequestError = require("../utils/Errors/BadRequestError");
+const ConflictError = require("../utils/Errors/ConflictError");
+const UnauthorisedError = require("../utils/Errors/UnauthorisedError");
 
 const mongoDuplicateError = 11000;
 
-const getCurrentUser = (req, res) => {
+const getCurrentUser = (req, res, next) => {
   const userId = req.user._id;
 
   User.findById(userId)
     .orFail(() => {
       const error = new Error("User ID not found");
-      error.statusCode = NOT_FOUND;
+      error.statusCode = 404;
       throw error;
     })
     .then((user) => {
@@ -29,32 +24,26 @@ const getCurrentUser = (req, res) => {
     .catch((err) => {
       console.error(err);
       if (err.message === "User ID not found") {
-        return res.status(NOT_FOUND).send({ message: "User not found" });
+        return next(new NotFoundError("User not found"));
       }
       if (err.name === "CastError") {
-        return res
-          .status(BAD_REQUEST)
-          .send({ message: "Invalid input, please try again" });
+        return next(new BadRequestError("Invalid input, please try again"));
       }
-      return res
-        .status(DEFAULT)
-        .send({ message: "An error has occurred on the server" });
+      return next(err);
     });
 };
 
-const createUser = (req, res) => {
+const createUser = (req, res, next) => {
   const { name, email, avatar, password } = req.body;
 
   if (!email) {
-    return res.status(BAD_REQUEST).send({ message: "Email required" });
+    return next(new BadRequestError("Email Required"));
   }
 
   return User.findOne({ email })
     .then((existingUser) => {
       if (existingUser) {
-        return res
-          .status(CONFLICT_ERROR)
-          .send({ message: "A user with this email already exists" });
+        return next(new ConflictError("A user with this email already exists"));
       }
 
       return bcrypt
@@ -69,18 +58,12 @@ const createUser = (req, res) => {
     .catch((err) => {
       console.error(err);
       if (err.code === mongoDuplicateError) {
-        return res
-          .status(CONFLICT_ERROR)
-          .send({ message: "A user with this email already exists" });
+        return next(new ConflictError("A user with this email already exists"));
       }
       if (err.name === "ValidationError") {
-        return res
-          .status(BAD_REQUEST)
-          .send({ message: "Invalid input, please try again" });
+        return next(new BadRequestError("Invalid input, please try again"));
       }
-      return res
-        .status(DEFAULT)
-        .send({ message: "An error has occurred on the server" });
+      return next(err);
     });
 };
 
@@ -102,30 +85,20 @@ const updateProfile = (req, res, next) => {
     .catch((err) => {
       console.error(err);
       if (err.message === "User ID not found") {
-        return next(res.status(NOT_FOUND).send({ message: "User not found" }));
+        return next(new NotFoundError("User not found"));
       }
       if (err.name === "ValidationError") {
-        return next(
-          res
-            .status(BAD_REQUEST)
-            .send({ message: "Invalid input, please try again" })
-        );
+        return next(new BadRequestError("Invalid input, please try again"));
       }
-      return next(
-        res
-          .status(DEFAULT)
-          .send({ message: "An error has occurred on the server" })
-      );
+      return next(err);
     });
 };
 
-const login = (req, res) => {
+const login = (req, res, next) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return res
-      .status(BAD_REQUEST)
-      .send({ message: "Email and password required" });
+    return next(new BadRequestError("Invalid input, please try again"));
   }
 
   return User.findUserByCredentials(email, password)
@@ -139,13 +112,9 @@ const login = (req, res) => {
     .catch((err) => {
       console.error(err);
       if (err.message === "Incorrect email or password") {
-        return res
-          .status(UNAUTHORISED)
-          .send({ message: "Incorrect email or password" });
+        return next(new UnauthorisedError("Incorrect email or password"));
       }
-      return res
-        .status(DEFAULT)
-        .send({ message: "An error has occurred on the server" });
+      return next(err);
     });
 };
 

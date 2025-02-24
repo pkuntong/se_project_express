@@ -9,9 +9,9 @@ const {
 const auth = require("../middlewares/auth");
 
 router.get("/", getClothingItems);
-router.post("/", auth, createClothingItem);
-router.delete("/:itemId", auth, deleteClothingItem);
-router.delete("/:itemId/likes", auth, dislikeItem);
-router.put("/:itemId/likes", auth, likeItem);
+router.post("/", auth, validateCreateItem, createClothingItem);
+router.delete("/:itemId", auth, validateId, deleteClothingItem);
+router.delete("/:itemId/likes", auth, validateId, dislikeItem);
+router.put("/:itemId/likes", auth, validateId, likeItem);
 
 module.exports = router;
