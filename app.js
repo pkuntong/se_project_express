@@ -25,12 +25,13 @@ app.use(errors());
 app.use(errorHandler);
 
 app.use(requestLogger);
+
 app.use(routes);
 
-app.use(errorLogger); // enabling the error logger
+app.use(errorLogger);
 
-app.use(errors()); // celebrate error handler
-app.use(errorHandler); //centralized error handler
+app.use(errors());
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`App listening at port ${PORT}`);
