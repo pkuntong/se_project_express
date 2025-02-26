@@ -8,6 +8,10 @@ const {
   validateLogIn,
 } = require("../middlewares/validation");
 
+router.get("/", (req, res) => {
+  res.send("Backend is working!");
+});
+
 router.get('/crash-test', () => {
   setTimeout(() => {
     throw new Error('Server will crash now');
